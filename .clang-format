@@ -1,0 +1,13 @@
+---
+BasedOnStyle: WebKit
+ColumnLimit: 140
+ContinuationIndentWidth: 2
+Cpp11BracedListStyle: true
+DerivePointerAlignment: true
+IndentWidth: 8
+TabWidth: 8
+SpaceBeforeCpp11BracedList: false
+SpacesInAngles: true
+SpacesInConditionalStatement: false
+UseTab: Always
+...
