@@ -13,7 +13,7 @@ set(OPENGL_VERSION "1.1" CACHE STRING "" FORCE)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/raylib)
 
-add_executable(game src/main.c src/collision_table.c src/collision_table.h)
+add_executable(game src/main.c)
 
 target_link_libraries(
         game PRIVATE raylib
