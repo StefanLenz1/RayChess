@@ -10,7 +10,7 @@ bool isPieceFromOpponent(int collumn, int row, int player) { return (!isPieceFro
 
 bool isPieceFromPlayer(int collumn, int row, int player) { return (chess_board[collumn][row].player == player); }
 
-void setPawnMoves(int player, int piece, int collumn, int row)
+void setPawnMoves(int player, int collumn, int row)
 {
 	if (player == WHITE_PLAYER) {
 		if (chess_board[collumn][row - 1].piece == EMPTY) {
@@ -28,11 +28,11 @@ void setPawnMoves(int player, int piece, int collumn, int row)
 		int topRightCollumn = collumn + 1;
 		int topRow = row - 1;
 		if (topRow >= 0) {
-			if (topLeftCollumn < BOARD_SIZE) {
+			if (topLeftCollumn >= 0) {
 				if (isPieceFromOpponent(topLeftCollumn, topRow, player)) // top-left of pawn
 					legal_moves[topLeftCollumn][topRow] = true;
 			}
-			if (topRightCollumn >= 0)
+			if (topRightCollumn < BOARD_SIZE)
 			{
 				if (isPieceFromOpponent(topRightCollumn, topRow, player)) // top-right of pawn
 					legal_moves[topRightCollumn][topRow] = true;
@@ -55,11 +55,11 @@ void setPawnMoves(int player, int piece, int collumn, int row)
 		int bottomRightCollumn = collumn + 1;
 		int bottomRow = row + 1;
 		if (bottomRow < BOARD_SIZE) {
-			if (bottomLeftCollumn < BOARD_SIZE) {
+			if (bottomLeftCollumn >= 0) {
 				if (isPieceFromOpponent(bottomLeftCollumn, bottomRow, player)) // bottom-left of pawn
 					legal_moves[bottomLeftCollumn][bottomRow] = true;
 			}
-			if (bottomRightCollumn >= 0)
+			if (bottomRightCollumn < BOARD_SIZE)
 			{
 				if (isPieceFromOpponent(bottomRightCollumn, bottomRow, player)) // bottom-right of pawn
 					legal_moves[bottomRightCollumn][bottomRow] = true;
@@ -68,7 +68,7 @@ void setPawnMoves(int player, int piece, int collumn, int row)
 	}
 }
 
-void setRookMoves(int player, int piece, int collumn, int row)
+void setRookMoves(int player, int collumn, int row)
 {
 	// move up
 	for (int i = row - 1; i >= 0; i--) {
@@ -107,6 +107,31 @@ void setRookMoves(int player, int piece, int collumn, int row)
 			break;
 		} else if (!isPieceFromPlayer(i, row, player))
 			legal_moves[i][row] = true;
+		else
+			break;
+	}
+}
+
+void setBishopMoves(int player, int collumn, int row)
+{
+	// move up-left
+	for (int i = collumn - 1, j = row - 1; i >= 0 && j >= 0; i--, j--) {
+		if (isPieceFromOpponent(i, j, player)) {
+			legal_moves[i][j] = true;
+			break;
+		} else if (!isPieceFromPlayer(i, j, player))
+			legal_moves[i][j] = true;
+		else
+			break;
+	}
+	// move up-right
+	if (collumn + 1 < BOARD_SIZE || row - 1 >= 0)
+	for (int i = collumn + 1, j = row - 1; i < BOARD_SIZE && j >= 0; i++, j--) {
+		if (isPieceFromOpponent(i, j, player)) {
+			legal_moves[i][j] = true;
+			break;
+		} else if (!isPieceFromPlayer(i, j, player))
+			legal_moves[i][j] = true;
 		else
 			break;
 	}

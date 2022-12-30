@@ -297,16 +297,16 @@ void getLegalMoves(struct pieces pieces, int collumn, int row)
 	int player = pieces.player;
 	switch (piece) {
 	case PAWN:
-		setPawnMoves(player, piece, collumn, row);
+		setPawnMoves(player, collumn, row);
 		break;
 	case KNIGHT:
 		// TODO
 		break;
 	case BISHOP:
-		// TODO
+		setBishopMoves(player, collumn, row);
 		break;
 	case ROOK:
-		setRookMoves(player, piece, collumn, row);
+		setRookMoves(player, collumn, row);
 		break;
 	case QUEEN:
 		// TODO
