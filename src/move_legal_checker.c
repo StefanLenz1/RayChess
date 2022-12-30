@@ -1,13 +1,5 @@
-#include <raylib.h>
-#define BOARD_SIZE 8
-extern bool legal_moves[8][8];
-struct pieces {
-	char piece;
-	int player; // 0 is empty, 1 is player one, 2 is player two
-	bool isSelected;
-	bool isMouseHovering;
-};
-extern struct pieces chess_board[BOARD_SIZE][BOARD_SIZE];
+#include "raylib.h"
+#include "board_and_pieces.h"
 
 bool isPieceFromOpponent(int collumn, int row, int player)
 {
@@ -23,15 +15,15 @@ bool isPieceFromPlayer(int collumn, int row, int player)
 	return false;
 }
 
-void setPawnMoves(int player, char piece, int collumn, int row)
+void setPawnMoves(int player, int piece, int collumn, int row)
 {
 	if (player == 1) // White
 	{
-		if (chess_board[collumn][row - 1].piece == 'e') {
+		if (chess_board[collumn][row - 1].piece == EMPTY) {
 			if (row == 6) // Did not move yet
 			{
 				legal_moves[collumn][row - 1] = true;
-				if (chess_board[collumn][row - 2].piece == 'e')
+				if (chess_board[collumn][row - 2].piece == EMPTY)
 					legal_moves[collumn][row - 2] = true;
 			} else {
 				legal_moves[collumn][row - 1] = true;
@@ -44,11 +36,11 @@ void setPawnMoves(int player, char piece, int collumn, int row)
 	}
 	if (player == 2) // Black
 	{
-		if (chess_board[collumn][row + 1].piece == 'e') {
+		if (chess_board[collumn][row + 1].piece == EMPTY) {
 			if (row == 1) // Did not move yet
 			{
 				legal_moves[collumn][row + 1] = true;
-				if (chess_board[collumn][row + 2].piece == 'e')
+				if (chess_board[collumn][row + 2].piece == EMPTY)
 					legal_moves[collumn][row + 2] = true;
 			} else {
 				legal_moves[collumn][row + 1] = true;
@@ -57,7 +49,7 @@ void setPawnMoves(int player, char piece, int collumn, int row)
 	}
 }
 
-void setRookMoves(int player, char piece, int collumn, int row)
+void setRookMoves(int player, int piece, int collumn, int row)
 {
 	// move up
 	for (int i = row - 1; i >= 0; i--) {

@@ -1,13 +1,7 @@
 #include "move_legal_checker.h"
-#include "pieces.h"
+#include "piece_sprites.h"
 #include "raylib.h"
-
-struct pieces {
-	char piece;
-	int player; // 0 is empty, 1 is player one, 2 is player two
-	bool isSelected;
-	bool isMouseHovering;
-};
+#include "board_and_pieces.h"
 
 void initializeChessBoard();
 Rectangle getSourceSprite(struct pieces pieces);
@@ -19,47 +13,39 @@ void drawLegalMoves();
 void setLegalMoves();
 void movePiece();
 
-#define BOARD_SIZE 8
-bool legal_moves[BOARD_SIZE][BOARD_SIZE];
-struct pieces chess_board[BOARD_SIZE][BOARD_SIZE];
-/*
-e: empty
-n: knight
-b: bishop
-q: queen
-k: king
-p: pawn
-r: rook
-*/
-
 Texture2D cb_pieces;
 const int SQUARE_SIZE = 60; // in pixels
 
+bool legal_moves[BOARD_SIZE][BOARD_SIZE];
+struct pieces chess_board[BOARD_SIZE][BOARD_SIZE];
+
 int main(void)
 {
+	// window initialization
 	const int screenWidth = SQUARE_SIZE * 8;
 	const int screenHeight = SQUARE_SIZE * 8;
-
+	const int targetFps = 60;
 	InitWindow(screenWidth, screenHeight, "RayChess");
-	SetTargetFPS(60);
+	SetTargetFPS(targetFps);
 
+	// resource loading
 	cb_pieces = LoadTexture("../resources/chesspieces_spritesheet.png");
+	
+	// initialize cross function variables and arrays to 0 and false
 	initializeChessBoard();
 	Vector2 mouse_position = {.x = 0.0f, .y = 0.0f};
 	bool pieceIsSelected = false;
+	for (int collumn = 0; collumn < BOARD_SIZE; collumn++)
+		for (int row = 0; row < BOARD_SIZE; row++)
+			legal_moves[collumn][row] = false;
 
-	// initialize legal move board
-	for (int i = 0; i < BOARD_SIZE; i++)
-		for (int j = 0; j < BOARD_SIZE; j++)
-			legal_moves[i][j] = false;
-
-	// Main game loop
+	// main game loop
 	while (!WindowShouldClose()) {
-		updateFrame(&mouse_position, &pieceIsSelected);
-		drawFrame();
+		updateFrame(&mouse_position, &pieceIsSelected); // updates the game logic
+		drawFrame(); // draws the frame
 	}
 
-	// De-Initialization
+	// de-initialization
 	CloseWindow();
 
 	return 0;
@@ -67,37 +53,37 @@ int main(void)
 
 void initializeChessBoard()
 {
-	// empty field
-	for (int i = 0; i < BOARD_SIZE; i++)
-		for (int j = 0; j < BOARD_SIZE; j++) {
-			chess_board[i][j] = (struct pieces){.piece = 'e', .player = 0};
-			chess_board[i][j].isSelected = false;
-			chess_board[i][j].isMouseHovering = false;
+	// empty board
+	for (int collumn = 0; collumn < BOARD_SIZE; collumn++)
+		for (int row = 0; row < BOARD_SIZE; row++) {
+			chess_board[collumn][row] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
+			chess_board[collumn][row].isSelected = false;
+			chess_board[collumn][row].isMouseHovering = false;
 		}
 
 	// white pieces
-	chess_board[0][7] = (struct pieces){.piece = 'r', .player = 1};
-	chess_board[1][7] = (struct pieces){.piece = 'n', .player = 1};
-	chess_board[2][7] = (struct pieces){.piece = 'b', .player = 1};
-	chess_board[3][7] = (struct pieces){.piece = 'k', .player = 1};
-	chess_board[4][7] = (struct pieces){.piece = 'q', .player = 1};
-	chess_board[5][7] = (struct pieces){.piece = 'b', .player = 1};
-	chess_board[6][7] = (struct pieces){.piece = 'n', .player = 1};
-	chess_board[7][7] = (struct pieces){.piece = 'r', .player = 1};
+	chess_board[0][7] = (struct pieces){.piece = ROOK, .player = WHITE_PLAYER};
+	chess_board[1][7] = (struct pieces){.piece = KNIGHT, .player = WHITE_PLAYER};
+	chess_board[2][7] = (struct pieces){.piece = BISHOP, .player = WHITE_PLAYER};
+	chess_board[3][7] = (struct pieces){.piece = KING, .player = WHITE_PLAYER};
+	chess_board[4][7] = (struct pieces){.piece = QUEEN, .player = WHITE_PLAYER};
+	chess_board[5][7] = (struct pieces){.piece = BISHOP, .player = WHITE_PLAYER};
+	chess_board[6][7] = (struct pieces){.piece = KNIGHT, .player = WHITE_PLAYER};
+	chess_board[7][7] = (struct pieces){.piece = ROOK, .player = WHITE_PLAYER};
 	for (int i = 0; i < BOARD_SIZE; i++)
-		chess_board[i][6] = (struct pieces){.piece = 'p', .player = 1};
+		chess_board[i][6] = (struct pieces){.piece = PAWN, .player = WHITE_PLAYER};
 
 	// black pieces
-	chess_board[0][0] = (struct pieces){.piece = 'r', .player = 2};
-	chess_board[1][0] = (struct pieces){.piece = 'n', .player = 2};
-	chess_board[2][0] = (struct pieces){.piece = 'b', .player = 2};
-	chess_board[3][0] = (struct pieces){.piece = 'k', .player = 2};
-	chess_board[4][0] = (struct pieces){.piece = 'q', .player = 2};
-	chess_board[5][0] = (struct pieces){.piece = 'b', .player = 2};
-	chess_board[6][0] = (struct pieces){.piece = 'n', .player = 2};
-	chess_board[7][0] = (struct pieces){.piece = 'r', .player = 2};
+	chess_board[0][0] = (struct pieces){.piece = ROOK, .player = BLACK_PLAYER};
+	chess_board[1][0] = (struct pieces){.piece = KNIGHT, .player = BLACK_PLAYER};
+	chess_board[2][0] = (struct pieces){.piece = BISHOP, .player = BLACK_PLAYER};
+	chess_board[3][0] = (struct pieces){.piece = KING, .player = BLACK_PLAYER};
+	chess_board[4][0] = (struct pieces){.piece = QUEEN, .player = BLACK_PLAYER};
+	chess_board[5][0] = (struct pieces){.piece = BISHOP, .player = BLACK_PLAYER};
+	chess_board[6][0] = (struct pieces){.piece = KNIGHT, .player = BLACK_PLAYER};
+	chess_board[7][0] = (struct pieces){.piece = ROOK, .player = BLACK_PLAYER};
 	for (int i = 0; i < BOARD_SIZE; i++)
-		chess_board[i][1] = (struct pieces){.piece = 'p', .player = 2};
+		chess_board[i][1] = (struct pieces){.piece = PAWN, .player = BLACK_PLAYER};
 }
 
 void drawFrame()
@@ -113,27 +99,30 @@ void drawFrame()
 
 void drawBoard()
 {
-	for (int i = 0; i < BOARD_SIZE; i++) {
-		for (int j = 0; j < BOARD_SIZE; j++) {
-			// draw board
-			Vector2 rectPos = (Vector2){.x = i * SQUARE_SIZE, .y = j * SQUARE_SIZE};
-			if ((i % 2 == 0) && (j % 2 == 0) || (i % 2 == 1) && (j % 2 == 1)) // if both are even or both are odd
+	for (int collumn = 0; collumn < BOARD_SIZE; collumn++) {
+		for (int row = 0; row < BOARD_SIZE; row++) {
+			Vector2 rectPos = (Vector2){.x = collumn * SQUARE_SIZE, .y = row * SQUARE_SIZE}; // target square
+
+			// draw checkered pattern
+			if ((collumn % 2 == 0) && (row % 2 == 0) || (collumn % 2 == 1) && (row % 2 == 1)) // if both are even or both are odd
 			{
 				DrawRectangle(rectPos.x, rectPos.y, SQUARE_SIZE, SQUARE_SIZE, CB_COLOR1);
 			} else {
 				DrawRectangle(rectPos.x, rectPos.y, SQUARE_SIZE, SQUARE_SIZE, CB_COLOR2);
 			}
-			// draw hovered over field
-			if (chess_board[i][j].isMouseHovering) {
+
+			// draw hovered over square
+			if (chess_board[collumn][row].isMouseHovering) {
 				DrawRectangle(rectPos.x, rectPos.y, SQUARE_SIZE, SQUARE_SIZE, CB_COLOR4);
 			}
-			// draw clicked on field
-			if (chess_board[i][j].isSelected) {
+
+			// draw clicked on square
+			if (chess_board[collumn][row].isSelected) {
 				DrawRectangle(rectPos.x, rectPos.y, SQUARE_SIZE, SQUARE_SIZE, CB_COLOR3);
 			}
 			// draw pieces
-			Rectangle source = getSourceSprite(chess_board[i][j]);
-			if (chess_board[i][j].player) // if not zero
+			Rectangle source = getSourceSprite(chess_board[collumn][row]);
+			if (chess_board[collumn][row].player) // if not zero
 				DrawTextureRec(cb_pieces, source, rectPos, WHITE);
 		}
 	}
@@ -141,10 +130,11 @@ void drawBoard()
 
 void drawLegalMoves()
 {
-	for (int i = 0; i < BOARD_SIZE; i++) {
-		for (int j = 0; j < BOARD_SIZE; j++) {
-			Vector2 rectPos = (Vector2){.x = i * SQUARE_SIZE, .y = j * SQUARE_SIZE};
-			if (legal_moves[i][j]) {
+	for (int collumn = 0; collumn < BOARD_SIZE; collumn++) {
+		for (int row = 0; row < BOARD_SIZE; row++) {
+			Vector2 rectPos = (Vector2){.x = collumn * SQUARE_SIZE, .y = row * SQUARE_SIZE}; // target square
+
+			if (legal_moves[collumn][row]) {
 				DrawCircle(rectPos.x + SPRITE_SIZE / 2, rectPos.y + SPRITE_SIZE / 2, 10.0f,
 				  (Color){.r = 0, .g = 121, .b = 255, .a = 100});
 			}
@@ -172,7 +162,7 @@ void updateFrame(Vector2* mouse_position, bool* pieceIsSelected)
 		*pieceIsSelected = false;
 	}
 
-	// update selcted field
+	// update selcted square
 	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 		if (chess_board[collumn][row].isSelected) {
 			chess_board[collumn][row].isSelected = false;
@@ -191,27 +181,27 @@ void updateFrame(Vector2* mouse_position, bool* pieceIsSelected)
 Rectangle getSourceSprite(struct pieces pieces)
 {
 	int player = pieces.player;
-	char piece = pieces.piece;
+	int piece = pieces.piece;
 	Rectangle source;
 	if (player == 1) // white
 	{
 		switch (piece) {
-		case 'p':
+		case PAWN:
 			source = white_pawn;
 			break;
-		case 'n':
+		case KNIGHT:
 			source = white_knight;
 			break;
-		case 'b':
+		case BISHOP:
 			source = white_bishop;
 			break;
-		case 'r':
+		case ROOK:
 			source = white_rook;
 			break;
-		case 'q':
+		case QUEEN:
 			source = white_queen;
 			break;
-		case 'k':
+		case KING:
 			source = white_king;
 			break;
 		}
@@ -220,22 +210,22 @@ Rectangle getSourceSprite(struct pieces pieces)
 	if (player == 2) // black
 	{
 		switch (piece) {
-		case 'p':
+		case PAWN:
 			source = black_pawn;
 			break;
-		case 'n':
+		case KNIGHT:
 			source = black_knight;
 			break;
-		case 'b':
+		case BISHOP:
 			source = black_bishop;
 			break;
-		case 'r':
+		case ROOK:
 			source = black_rook;
 			break;
-		case 'q':
+		case QUEEN:
 			source = black_queen;
 			break;
-		case 'k':
+		case KING:
 			source = black_king;
 			break;
 		}
@@ -260,38 +250,41 @@ void setLegalMoves()
 
 void getLegalMoves(struct pieces pieces, int collumn, int row)
 {
-	char piece = pieces.piece;
+	int piece = pieces.piece;
 	int player = pieces.player;
 	switch (piece) {
-	case 'p':
+	case PAWN:
 		setPawnMoves(player, piece, collumn, row);
 		break;
-	case 'n':
-		// source = white_knight;
+	case KNIGHT:
+		// TODO
 		break;
-	case 'b':
-		// source = white_bishop;
+	case BISHOP:
+		// TODO
 		break;
-	case 'r':
+	case ROOK:
 		setRookMoves(player, piece, collumn, row);
 		break;
-	case 'q':
-		// source = white_queen;
+	case QUEEN:
+		// TODO
 		break;
-	case 'k':
-		// source = white_king;
+	case KING:
+		// TODO
 		break;
 	}
 }
 
 void movePiece()
 {
-	struct pieces piece;
-	int piece_collumn;
-	int piece_row;
-	struct pieces moveTo;
-	int moveTo_collumn;
-	int moveTo_row;
+	// initiating variables
+	struct pieces piece = {.isMouseHovering = false, .isSelected = false, .piece = EMPTY, .player = NO_PLAYER};
+	int piece_collumn = -1;
+	int piece_row = -1;
+	struct pieces moveTo = {.isMouseHovering = false, .isSelected = false, .piece = EMPTY, .player = NO_PLAYER};
+	int moveTo_collumn = -1;
+	int moveTo_row = -1;
+
+	// assign value to variables
 	for (int collumn = 0; collumn < BOARD_SIZE; collumn++)
 	{
 		for (int row = 0; row < BOARD_SIZE; row++)
@@ -310,7 +303,9 @@ void movePiece()
 			}
 		}
 	}
+
+	// move pieces
 	chess_board[piece_collumn][piece_row].isSelected = false;
 	chess_board[moveTo_collumn][moveTo_row] = chess_board[piece_collumn][piece_row];
-	chess_board[piece_collumn][piece_row] = (struct pieces){.piece = 'e', .player = 0};
+	chess_board[piece_collumn][piece_row] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
 }
