@@ -1,24 +1,24 @@
-#include "raylib.h"
 #include "board_and_pieces.h"
+#include "raylib.h"
+
+bool isPieceFromPlayerOrEmpty(int collumn, int row, int player)
+{
+	return (chess_board[collumn][row].player == player || chess_board[collumn][row].player == NO_PLAYER);
+}
 
 bool isPieceFromOpponent(int collumn, int row, int player)
 {
-	if (chess_board[collumn][row].player == player || chess_board[collumn][row].player == 0) // Piece not from player and not empty
-		return false;
-	return true;
+	return (!isPieceFromPlayerOrEmpty(collumn, row, player));
 }
 
 bool isPieceFromPlayer(int collumn, int row, int player)
 {
-	if (chess_board[collumn][row].player == player)
-		return true;
-	return false;
+	return (chess_board[collumn][row].player == player);
 }
 
 void setPawnMoves(int player, int piece, int collumn, int row)
 {
-	if (player == 1) // White
-	{
+	if (player == WHITE_PLAYER) {
 		if (chess_board[collumn][row - 1].piece == EMPTY) {
 			if (row == 6) // Did not move yet
 			{
@@ -34,8 +34,8 @@ void setPawnMoves(int player, int piece, int collumn, int row)
 		if (isPieceFromOpponent(collumn + 1, row - 1, player)) // top-right of pawn
 			legal_moves[collumn + 1][row - 1] = true;
 	}
-	if (player == 2) // Black
-	{
+
+	if (player == BLACK_PLAYER) {
 		if (chess_board[collumn][row + 1].piece == EMPTY) {
 			if (row == 1) // Did not move yet
 			{
@@ -46,6 +46,10 @@ void setPawnMoves(int player, int piece, int collumn, int row)
 				legal_moves[collumn][row + 1] = true;
 			}
 		}
+		if (isPieceFromOpponent(collumn - 1, row + 1, player)) // bottom-left of pawn
+			legal_moves[collumn - 1][row + 1] = true;
+		if (isPieceFromOpponent(collumn + 1, row + 1, player)) // bottom-right of pawn
+			legal_moves[collumn + 1][row + 1] = true;
 	}
 }
 
