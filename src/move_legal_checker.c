@@ -6,15 +6,9 @@ bool isPieceFromPlayerOrEmpty(int collumn, int row, int player)
 	return (chess_board[collumn][row].player == player || chess_board[collumn][row].player == NO_PLAYER);
 }
 
-bool isPieceFromOpponent(int collumn, int row, int player)
-{
-	return (!isPieceFromPlayerOrEmpty(collumn, row, player));
-}
+bool isPieceFromOpponent(int collumn, int row, int player) { return (!isPieceFromPlayerOrEmpty(collumn, row, player)); }
 
-bool isPieceFromPlayer(int collumn, int row, int player)
-{
-	return (chess_board[collumn][row].player == player);
-}
+bool isPieceFromPlayer(int collumn, int row, int player) { return (chess_board[collumn][row].player == player); }
 
 void setPawnMoves(int player, int piece, int collumn, int row)
 {
@@ -29,10 +23,21 @@ void setPawnMoves(int player, int piece, int collumn, int row)
 				legal_moves[collumn][row - 1] = true;
 			}
 		}
-		if (isPieceFromOpponent(collumn - 1, row - 1, player)) // top-left of pawn
-			legal_moves[collumn - 1][row - 1] = true;
-		if (isPieceFromOpponent(collumn + 1, row - 1, player)) // top-right of pawn
-			legal_moves[collumn + 1][row - 1] = true;
+
+		int topLeftCollumn = collumn - 1;
+		int topRightCollumn = collumn + 1;
+		int topRow = row - 1;
+		if (topRow >= 0) {
+			if (topLeftCollumn < BOARD_SIZE) {
+				if (isPieceFromOpponent(topLeftCollumn, topRow, player)) // top-left of pawn
+					legal_moves[topLeftCollumn][topRow] = true;
+			}
+			if (topRightCollumn >= 0)
+			{
+				if (isPieceFromOpponent(topRightCollumn, topRow, player)) // top-right of pawn
+					legal_moves[topRightCollumn][topRow] = true;
+			}
+		}
 	}
 
 	if (player == BLACK_PLAYER) {
@@ -46,10 +51,20 @@ void setPawnMoves(int player, int piece, int collumn, int row)
 				legal_moves[collumn][row + 1] = true;
 			}
 		}
-		if (isPieceFromOpponent(collumn - 1, row + 1, player)) // bottom-left of pawn
-			legal_moves[collumn - 1][row + 1] = true;
-		if (isPieceFromOpponent(collumn + 1, row + 1, player)) // bottom-right of pawn
-			legal_moves[collumn + 1][row + 1] = true;
+		int bottomLeftCollumn = collumn - 1;
+		int bottomRightCollumn = collumn + 1;
+		int bottomRow = row + 1;
+		if (bottomRow < BOARD_SIZE) {
+			if (bottomLeftCollumn < BOARD_SIZE) {
+				if (isPieceFromOpponent(bottomLeftCollumn, bottomRow, player)) // bottom-left of pawn
+					legal_moves[bottomLeftCollumn][bottomRow] = true;
+			}
+			if (bottomRightCollumn >= 0)
+			{
+				if (isPieceFromOpponent(bottomRightCollumn, bottomRow, player)) // bottom-right of pawn
+					legal_moves[bottomRightCollumn][bottomRow] = true;
+			}
+		}
 	}
 }
 
@@ -65,7 +80,7 @@ void setRookMoves(int player, int piece, int collumn, int row)
 		else
 			break;
 	}
-	// move up
+	// move down
 	for (int i = row + 1; i < BOARD_SIZE; i++) {
 		if (isPieceFromOpponent(collumn, i, player)) {
 			legal_moves[collumn][i] = true;

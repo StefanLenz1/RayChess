@@ -38,9 +38,7 @@ int main(void)
 	initializeChessBoard();
 	Vector2 mouse_position = {.x = 0.0f, .y = 0.0f};
 	bool pieceIsSelected = false;
-	for (int collumn = 0; collumn < BOARD_SIZE; collumn++)
-		for (int row = 0; row < BOARD_SIZE; row++)
-			legal_moves[collumn][row] = false;
+	resetLegalMoves();
 
 	// main game loop
 	while (!WindowShouldClose()) {
@@ -50,7 +48,6 @@ int main(void)
 
 	// de-initialization
 	CloseWindow();
-
 	return 0;
 }
 
@@ -58,11 +55,13 @@ void initializeChessBoard()
 {
 	// empty board
 	for (int collumn = 0; collumn < BOARD_SIZE; collumn++)
+	{
 		for (int row = 0; row < BOARD_SIZE; row++) {
 			chess_board[collumn][row] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
 			chess_board[collumn][row].isSelected = false;
 			chess_board[collumn][row].isMouseHovering = false;
 		}
+	}
 
 	// white pieces
 	chess_board[0][7] = (struct pieces){.piece = ROOK, .player = WHITE_PLAYER};
@@ -192,6 +191,7 @@ void updateFrame(Vector2* mouse_position, bool* pieceIsSelected)
 		}
 	} else {
 		resetBoardIsSelected();
+		resetLegalMoves();
 		chess_board[collumn][row].isSelected = true;
 		*pieceIsSelected = true;
 		setLegalMoves();
@@ -230,7 +230,7 @@ Rectangle getSourceSprite(struct pieces pieces)
 	int player = pieces.player;
 	int piece = pieces.piece;
 	Rectangle source;
-	if (player == WHITE_PLAYER) // white
+	if (player == WHITE_PLAYER)
 	{
 		switch (piece) {
 		case PAWN:
@@ -254,7 +254,7 @@ Rectangle getSourceSprite(struct pieces pieces)
 		}
 	}
 
-	if (player == BLACK_PLAYER) // black
+	if (player == BLACK_PLAYER)
 	{
 		switch (piece) {
 		case PAWN:
@@ -282,10 +282,6 @@ Rectangle getSourceSprite(struct pieces pieces)
 
 void setLegalMoves()
 {
-	for (int i = 0; i < BOARD_SIZE; i++)
-		for (int j = 0; j < BOARD_SIZE; j++)
-			legal_moves[i][j] = false;
-
 	for (int i = 0; i < BOARD_SIZE; i++) {
 		for (int j = 0; j < BOARD_SIZE; j++) {
 			if (chess_board[i][j].isSelected) {
@@ -332,11 +328,13 @@ void movePiece()
 	// assign value to variables
 	for (int collumn = 0; collumn < BOARD_SIZE; collumn++) {
 		for (int row = 0; row < BOARD_SIZE; row++) {
+			// get row and collumn of selected piece
 			if (chess_board[collumn][row].isSelected) {
 				piece = chess_board[collumn][row];
 				piece_collumn = collumn;
 				piece_row = row;
 			}
+			// get row and collumn of clicked piece
 			if (chess_board[collumn][row].isMouseHovering) {
 				moveTo = chess_board[collumn][row];
 				moveTo_collumn = collumn;
