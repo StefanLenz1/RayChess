@@ -13,7 +13,14 @@ set(OPENGL_VERSION "1.1" CACHE STRING "" FORCE)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/raylib)
 
-add_executable(game src/main.c src/piece_sprites.h src/move_legal_checker.c src/move_legal_checker.h src/board_and_pieces.h)
+add_executable(game 
+        src/main.c 
+        src/piece_sprites.h 
+        src/move_legal_checker.c 
+        src/move_legal_checker.h 
+        src/board_and_pieces.h 
+        src/chess_computer.c
+        src/chess_computer.h)
 
 target_link_libraries(
         game PRIVATE raylib

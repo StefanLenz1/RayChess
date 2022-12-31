@@ -2,12 +2,13 @@
 #include "move_legal_checker.h"
 #include "piece_sprites.h"
 #include "raylib.h"
+#include "chess_computer.h"
 
 void initializeChessBoard();
 Rectangle getSourceSprite(struct pieces pieces);
 void drawFrame();
 void drawBoard();
-void updateFrame(Vector2* mouse_position, bool* pieceIsSelected);
+void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponent_turn);
 void getLegalMoves(struct pieces pieces, int column, int row);
 void drawLegalMoves();
 void setLegalMoves();
@@ -15,8 +16,12 @@ void movePiece();
 void resetBoardIsSelected();
 void resetBoardIsHovering();
 void resetLegalMoves();
+void castle(int piece_column, int piece_row, int moveTo_column, int moveTo_row, int piece_player);
+void opponentMove();
 
 Texture2D cb_pieces;
+Sound capture_piece;
+Sound move_piece;
 const int SQUARE_SIZE = 60; // in pixels
 
 bool legal_moves[BOARD_SIZE][BOARD_SIZE];
@@ -30,23 +35,31 @@ int main(void)
 	const int targetFps = 60;
 	InitWindow(screenWidth, screenHeight, "RayChess");
 	SetTargetFPS(targetFps);
+	InitAudioDevice();
 
 	// resource loading
 	cb_pieces = LoadTexture("../resources/chesspieces_spritesheet.png");
+	capture_piece = LoadSound("../resources/capture_piece.wav");
+	move_piece = LoadSound("../resources/move_piece.wav");
 
 	// initialize cross function variables and arrays to 0 and false
 	initializeChessBoard();
 	Vector2 mouse_position = {.x = 0.0f, .y = 0.0f};
-	bool pieceIsSelected = false;
+	bool piece_is_selected = false;
+	bool opponent_turn = false;
 	resetLegalMoves();
 
 	// main game loop
 	while (!WindowShouldClose()) {
-		updateFrame(&mouse_position, &pieceIsSelected); // updates the game logic
+		updateFrame(&mouse_position, &piece_is_selected, &opponent_turn); // updates the game logic
 		drawFrame(); // draws the frame
 	}
 
 	// de-initialization
+	UnloadTexture(cb_pieces);
+	UnloadSound(capture_piece);
+	UnloadSound(move_piece);
+	CloseAudioDevice();
 	CloseWindow();
 	return 0;
 }
@@ -54,8 +67,7 @@ int main(void)
 void initializeChessBoard()
 {
 	// empty board
-	for (int column = 0; column < BOARD_SIZE; column++)
-	{
+	for (int column = 0; column < BOARD_SIZE; column++) {
 		for (int row = 0; row < BOARD_SIZE; row++) {
 			chess_board[column][row] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
 			chess_board[column][row].isSelected = false;
@@ -67,8 +79,8 @@ void initializeChessBoard()
 	chess_board[0][7] = (struct pieces){.piece = ROOK, .player = WHITE_PLAYER};
 	chess_board[1][7] = (struct pieces){.piece = KNIGHT, .player = WHITE_PLAYER};
 	chess_board[2][7] = (struct pieces){.piece = BISHOP, .player = WHITE_PLAYER};
-	chess_board[3][7] = (struct pieces){.piece = KING, .player = WHITE_PLAYER};
-	chess_board[4][7] = (struct pieces){.piece = QUEEN, .player = WHITE_PLAYER};
+	chess_board[3][7] = (struct pieces){.piece = QUEEN, .player = WHITE_PLAYER};
+	chess_board[4][7] = (struct pieces){.piece = KING, .player = WHITE_PLAYER};
 	chess_board[5][7] = (struct pieces){.piece = BISHOP, .player = WHITE_PLAYER};
 	chess_board[6][7] = (struct pieces){.piece = KNIGHT, .player = WHITE_PLAYER};
 	chess_board[7][7] = (struct pieces){.piece = ROOK, .player = WHITE_PLAYER};
@@ -79,8 +91,8 @@ void initializeChessBoard()
 	chess_board[0][0] = (struct pieces){.piece = ROOK, .player = BLACK_PLAYER};
 	chess_board[1][0] = (struct pieces){.piece = KNIGHT, .player = BLACK_PLAYER};
 	chess_board[2][0] = (struct pieces){.piece = BISHOP, .player = BLACK_PLAYER};
-	chess_board[3][0] = (struct pieces){.piece = KING, .player = BLACK_PLAYER};
-	chess_board[4][0] = (struct pieces){.piece = QUEEN, .player = BLACK_PLAYER};
+	chess_board[3][0] = (struct pieces){.piece = QUEEN, .player = BLACK_PLAYER};
+	chess_board[4][0] = (struct pieces){.piece = KING, .player = BLACK_PLAYER};
 	chess_board[5][0] = (struct pieces){.piece = BISHOP, .player = BLACK_PLAYER};
 	chess_board[6][0] = (struct pieces){.piece = KNIGHT, .player = BLACK_PLAYER};
 	chess_board[7][0] = (struct pieces){.piece = ROOK, .player = BLACK_PLAYER};
@@ -106,12 +118,11 @@ void drawBoard()
 			Vector2 rectPos = (Vector2){.x = column * SQUARE_SIZE, .y = row * SQUARE_SIZE}; // target square
 
 			// draw checkered pattern
-			if ((column % 2 == 0) && (row % 2 == 0)
-			  || (column % 2 == 1) && (row % 2 == 1)) // if both are even or both are odd
+			if ((column % 2 == 0) && (row % 2 == 0) || (column % 2 == 1) && (row % 2 == 1)) // if both are even or both are odd
 			{
-				DrawRectangle(rectPos.x, rectPos.y, SQUARE_SIZE, SQUARE_SIZE, CB_COLOR1);
-			} else {
 				DrawRectangle(rectPos.x, rectPos.y, SQUARE_SIZE, SQUARE_SIZE, CB_COLOR2);
+			} else {
+				DrawRectangle(rectPos.x, rectPos.y, SQUARE_SIZE, SQUARE_SIZE, CB_COLOR1);
 			}
 
 			// draw hovered over square
@@ -145,8 +156,15 @@ void drawLegalMoves()
 	}
 }
 
-void updateFrame(Vector2* mouse_position, bool* pieceIsSelected)
+void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponent_turn)
 {
+	// first check if it is the opponents turn
+	if(*opponent_turn)
+	{
+		opponentMove();
+		*opponent_turn = false;
+	}
+	
 	/*
 	1. click on an square with one of your pieces
 	2. click on a legal square to move to
@@ -170,22 +188,27 @@ void updateFrame(Vector2* mouse_position, bool* pieceIsSelected)
 
 	// cancel if piece is already selected
 	if (chess_board[column][row].isSelected) {
-		*pieceIsSelected = false;
+		*piece_is_selected = false;
 		resetBoardIsSelected();
 		resetLegalMoves();
 		return;
 	}
 
-	if (*pieceIsSelected) {
+	if (*piece_is_selected) {
 		if (legal_moves[column][row]) {
 			// legal move -> do it
+			if (chess_board[column][row].player == NO_PLAYER)
+				PlaySound(move_piece);
+			else
+				PlaySound(capture_piece);
 			movePiece();
-			*pieceIsSelected = false;
+			*piece_is_selected = false;
 			resetBoardIsSelected();
 			resetLegalMoves();
+			*opponent_turn = true;
 		} else {
 			// illegal move -> cancel
-			*pieceIsSelected = false;
+			*piece_is_selected = false;
 			resetLegalMoves();
 			resetBoardIsSelected();
 		}
@@ -193,7 +216,7 @@ void updateFrame(Vector2* mouse_position, bool* pieceIsSelected)
 		resetBoardIsSelected();
 		resetLegalMoves();
 		chess_board[column][row].isSelected = true;
-		*pieceIsSelected = true;
+		*piece_is_selected = true;
 		setLegalMoves();
 	}
 }
@@ -230,8 +253,7 @@ Rectangle getSourceSprite(struct pieces pieces)
 	int player = pieces.player;
 	int piece = pieces.piece;
 	Rectangle source;
-	if (player == WHITE_PLAYER)
-	{
+	if (player == WHITE_PLAYER) {
 		switch (piece) {
 		case PAWN:
 			source = white_pawn;
@@ -254,8 +276,7 @@ Rectangle getSourceSprite(struct pieces pieces)
 		}
 	}
 
-	if (player == BLACK_PLAYER)
-	{
+	if (player == BLACK_PLAYER) {
 		switch (piece) {
 		case PAWN:
 			source = black_pawn;
@@ -300,7 +321,7 @@ void getLegalMoves(struct pieces pieces, int column, int row)
 		setPawnMoves(player, column, row);
 		break;
 	case KNIGHT:
-		// TODO
+		setKnightMoves(player, column, row);
 		break;
 	case BISHOP:
 		setBishopMoves(player, column, row);
@@ -309,10 +330,10 @@ void getLegalMoves(struct pieces pieces, int column, int row)
 		setRookMoves(player, column, row);
 		break;
 	case QUEEN:
-		// TODO
+		setQueenMoves(player, column, row);
 		break;
 	case KING:
-		// TODO
+		setKingMoves(player, column, row);
 		break;
 	}
 }
@@ -342,9 +363,59 @@ void movePiece()
 			}
 		}
 	}
+	// castle rights
+	int piece_type = chess_board[piece_column][piece_row].piece;
+	int piece_player = chess_board[piece_column][piece_row].player;
+	if (piece_type == KING)
+		updateCastleRightsKing(piece_column, piece_row, piece_player);
+	if (piece_type == ROOK)
+		updateCastleRightsRook(piece_column, piece_row, piece_player);
+
+	// castle
+	if (piece_type == KING && chess_board[moveTo_column][moveTo_row].piece == ROOK) {
+		castle(piece_column, piece_row, moveTo_column, moveTo_row, piece_player);
+		return;
+	}
 
 	// move pieces
 	chess_board[piece_column][piece_row].isSelected = false;
 	chess_board[moveTo_column][moveTo_row] = chess_board[piece_column][piece_row];
 	chess_board[piece_column][piece_row] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
+}
+
+void castle(int piece_column, int piece_row, int moveTo_column, int moveTo_row, int piece_player)
+{
+	if (piece_player == WHITE_PLAYER) {
+		if (moveTo_column == 0) {
+			chess_board[2][7] = (struct pieces){.piece = KING, .player = piece_player};
+			chess_board[4][7] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
+			chess_board[3][7] = (struct pieces){.piece = ROOK, .player = piece_player};
+			chess_board[0][7] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
+		}
+		if (moveTo_column == 7) {
+			chess_board[6][7] = (struct pieces){.piece = KING, .player = piece_player};
+			chess_board[4][7] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
+			chess_board[5][7] = (struct pieces){.piece = ROOK, .player = piece_player};
+			chess_board[7][7] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
+		}
+	}
+	if (piece_player == BLACK_PLAYER) {
+		if (moveTo_column == 0) {
+			chess_board[2][0] = (struct pieces){.piece = KING, .player = piece_player};
+			chess_board[4][0] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
+			chess_board[3][0] = (struct pieces){.piece = ROOK, .player = piece_player};
+			chess_board[0][0] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
+		}
+		if (moveTo_column == 7) {
+			chess_board[6][0] = (struct pieces){.piece = KING, .player = piece_player};
+			chess_board[4][0] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
+			chess_board[5][0] = (struct pieces){.piece = ROOK, .player = piece_player};
+			chess_board[7][0] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
+		}
+	}
+}
+
+void opponentMove()
+{
+	;
 }
