@@ -1,5 +1,7 @@
 #include <raylib.h>
 
+#ifndef board_and_pieces
+#define board_and_pieces
 struct pieces {
 	int piece;
 	int player; // 0 is empty, 1 is player one, 2 is player two
@@ -40,3 +42,4 @@ enum {
 	PAWN,
 	ROOK
 };
+#endif

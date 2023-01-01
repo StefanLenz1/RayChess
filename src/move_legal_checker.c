@@ -102,7 +102,7 @@ void setPawnMoves(int player, int column, int row)
 					legal_moves[bottomLeftcolumn][bottomRow] = true;
 			}
 			if (bottomRightcolumn < BOARD_SIZE) {
-				if (getPieceState(bottomLeftcolumn, bottomRow, player) == FROM_OPPONENT) // bottom-right of pawn
+				if (getPieceState(bottomRightcolumn, bottomRow, player) == FROM_OPPONENT) // bottom-right of pawn
 					legal_moves[bottomRightcolumn][bottomRow] = true;
 			}
 		}

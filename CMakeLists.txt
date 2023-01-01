@@ -15,6 +15,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/raylib)
 
 add_executable(game 
         src/main.c 
+        src/main.h
         src/piece_sprites.h 
         src/move_legal_checker.c 
         src/move_legal_checker.h 

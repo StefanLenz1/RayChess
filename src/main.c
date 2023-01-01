@@ -1,23 +1,9 @@
-#include "board_and_pieces.h"
+#include "main.h"
+#include "chess_computer.h"
 #include "move_legal_checker.h"
 #include "piece_sprites.h"
 #include "raylib.h"
-#include "chess_computer.h"
-
-void initializeChessBoard();
-Rectangle getSourceSprite(struct pieces pieces);
-void drawFrame();
-void drawBoard();
-void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponent_turn);
-void getLegalMoves(struct pieces pieces, int column, int row);
-void drawLegalMoves();
-void setLegalMoves();
-void movePiece();
-void resetBoardIsSelected();
-void resetBoardIsHovering();
-void resetLegalMoves();
-void castle(int piece_column, int piece_row, int moveTo_column, int moveTo_row, int piece_player);
-void opponentMove();
+#include <stdlib.h>
 
 Texture2D cb_pieces;
 Sound capture_piece;
@@ -26,6 +12,7 @@ const int SQUARE_SIZE = 60; // in pixels
 
 bool legal_moves[BOARD_SIZE][BOARD_SIZE];
 struct pieces chess_board[BOARD_SIZE][BOARD_SIZE];
+extern struct board* history_of_turns;
 
 int main(void)
 {
@@ -47,15 +34,18 @@ int main(void)
 	Vector2 mouse_position = {.x = 0.0f, .y = 0.0f};
 	bool piece_is_selected = false;
 	bool opponent_turn = false;
+	bool game_is_over = false;
 	resetLegalMoves();
+	initaliazeMoveHistory();
 
 	// main game loop
 	while (!WindowShouldClose()) {
-		updateFrame(&mouse_position, &piece_is_selected, &opponent_turn); // updates the game logic
+		updateFrame(&mouse_position, &piece_is_selected, &opponent_turn, &game_is_over); // updates the game logic
 		drawFrame(); // draws the frame
 	}
 
 	// de-initialization
+	free(history_of_turns);
 	UnloadTexture(cb_pieces);
 	UnloadSound(capture_piece);
 	UnloadSound(move_piece);
@@ -156,15 +146,29 @@ void drawLegalMoves()
 	}
 }
 
-void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponent_turn)
+void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponent_turn, bool* game_is_over)
 {
-	// first check if it is the opponents turn
-	if(*opponent_turn)
+	if (*game_is_over) return; // game has ended
+
+	if (checkWinner()) // no winner is zero
 	{
+		*game_is_over = true;
+		return;
+	}
+
+	if (IsKeyPressed(KEY_R))
+	{
+		unMove();
+		return;
+	}
+
+	// check if it is the opponents turn
+	if (*opponent_turn) {
 		opponentMove();
 		*opponent_turn = false;
+		return;
 	}
-	
+
 	/*
 	1. click on an square with one of your pieces
 	2. click on a legal square to move to
@@ -374,13 +378,14 @@ void movePiece()
 	// castle
 	if (piece_type == KING && chess_board[moveTo_column][moveTo_row].piece == ROOK) {
 		castle(piece_column, piece_row, moveTo_column, moveTo_row, piece_player);
-		return;
+	} else {
+		// move pieces
+		chess_board[piece_column][piece_row].isSelected = false;
+		chess_board[moveTo_column][moveTo_row] = chess_board[piece_column][piece_row];
+		chess_board[piece_column][piece_row] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
 	}
 
-	// move pieces
-	chess_board[piece_column][piece_row].isSelected = false;
-	chess_board[moveTo_column][moveTo_row] = chess_board[piece_column][piece_row];
-	chess_board[piece_column][piece_row] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
+	saveMove();
 }
 
 void castle(int piece_column, int piece_row, int moveTo_column, int moveTo_row, int piece_player)
@@ -417,5 +422,33 @@ void castle(int piece_column, int piece_row, int moveTo_column, int moveTo_row, 
 
 void opponentMove()
 {
-	;
+	int player = BLACK_PLAYER;
+	int minmax_depth = 0;
+	bestMove(player, minmax_depth);
+}
+
+int checkWinner()
+{
+	// if no piece of a player is a king then the player has lost
+	bool black_lost = true;
+	bool white_lost = true;
+	for (int column = 0; column < BOARD_SIZE; column++)
+	{
+		for (int row = 0; row < BOARD_SIZE; row++)
+		{
+			if(chess_board[column][row].player == WHITE_PLAYER && chess_board[column][row].piece == KING)
+			{
+				white_lost = false;
+			}
+			if(chess_board[column][row].player == BLACK_PLAYER && chess_board[column][row].piece == KING)
+			{
+				black_lost = false;
+			}
+		}
+	}
+	if (white_lost)
+		return BLACK_PLAYER;
+	if (black_lost)
+		return WHITE_PLAYER;
+	return NO_PLAYER;
 }
