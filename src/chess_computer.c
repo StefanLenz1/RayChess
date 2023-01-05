@@ -35,12 +35,38 @@ void getPlayerPieces(int player, int amount_of_pieces, struct player_piece *poss
 int amountOfLegalMoves();
 void getPossibleMoves(struct pos *possible_legal_moves);
 
-const int pawn_worth = 1;
-const int knight_worth = 3;
-const int bishop_worth = 3;
-const int rook_worth = 5;
-const int queen_worth = 9;
-const int king_worth = 100; // value highter than other pieces combined
+const int PIECE_MULTIPLIER = 8; // higher piece multiplier -> position is less important
+
+const int PAWN_WORTH = 1 * PIECE_MULTIPLIER;
+const int KNIGHT_WORTH = 3 * PIECE_MULTIPLIER;
+const int BISHOP_WORTH = 3 * PIECE_MULTIPLIER;
+const int ROOK_WORTH = 5 * PIECE_MULTIPLIER;
+const int QUEEN_WORTH = 9 * PIECE_MULTIPLIER;
+const int KING_WORTH = 100 * PIECE_MULTIPLIER; // value highter than other pieces combined
+
+// center position have a higher worth (pawns, bishop, knights)
+const int POS_WORTH_CENTERPIECES[BOARD_SIZE][BOARD_SIZE] = {
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{1, 1, 2, 2, 2, 2, 1, 1},
+	{1, 1, 2, 3, 3, 2, 1, 1},
+	{1, 1, 2, 3, 3, 2, 0, 0},
+	{1, 1, 2, 2, 2, 2, 1, 1},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0}
+};
+
+// corner position have a higher worth (king)
+const int POS_WORTH_CORNERPIECES[BOARD_SIZE][BOARD_SIZE] = {
+	{1, 1, 5, 1, 1, 1, 5, 1},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{1, 1, 5, 1, 1, 1, 5, 1}
+};
 
 extern bool cancastle_b_king;
 extern bool cancastle_w_king;
@@ -68,7 +94,7 @@ struct temp_move bestMove(int player, int minmax_depth, struct temp_move previou
 	} else {
 		best_move.value = 100;
 	}
-	
+
 	// iterate through legal move for the specific selected pieces
 	for (int i = 0; i < amount_of_pieces; i++) {
 		// get legal moves for pieces
@@ -174,22 +200,26 @@ int evaluatePlayerWorth(int player)
 			if (chess_board[column][row].player == player) {
 				switch (chess_board[column][row].piece) {
 				case PAWN:
-					sum_piece_worth += pawn_worth;
+					sum_piece_worth += 2 * POS_WORTH_CENTERPIECES[column][row];
+					sum_piece_worth += PAWN_WORTH;
 					break;
 				case KNIGHT:
-					sum_piece_worth += knight_worth;
+					sum_piece_worth += POS_WORTH_CENTERPIECES[column][row];
+					sum_piece_worth += KNIGHT_WORTH;
 					break;
 				case BISHOP:
-					sum_piece_worth += bishop_worth;
+					sum_piece_worth += POS_WORTH_CENTERPIECES[column][row];
+					sum_piece_worth += BISHOP_WORTH;
 					break;
 				case ROOK:
-					sum_piece_worth += rook_worth;
+					sum_piece_worth += ROOK_WORTH;
 					break;
 				case QUEEN:
-					sum_piece_worth += queen_worth;
+					sum_piece_worth += QUEEN_WORTH;
 					break;
 				case KING:
-					sum_piece_worth += king_worth;
+					sum_piece_worth += POS_WORTH_CORNERPIECES[column][row];
+					sum_piece_worth += KING_WORTH;
 					break;
 				}
 			}
