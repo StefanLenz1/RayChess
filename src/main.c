@@ -35,12 +35,13 @@ int main(void)
 	bool piece_is_selected = false;
 	bool opponent_turn = false;
 	bool game_is_over = false;
+	struct temp_move previous_move;
 	resetLegalMoves();
 	initaliazeMoveHistory();
 
 	// main game loop
 	while (!WindowShouldClose()) {
-		updateFrame(&mouse_position, &piece_is_selected, &opponent_turn, &game_is_over); // updates the game logic
+		updateFrame(&mouse_position, &piece_is_selected, &opponent_turn, &game_is_over, &previous_move); // updates the game logic
 		drawFrame(); // draws the frame
 	}
 
@@ -146,7 +147,7 @@ void drawLegalMoves()
 	}
 }
 
-void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponent_turn, bool* game_is_over)
+void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponent_turn, bool* game_is_over, struct temp_move* previous_move)
 {
 	if (*game_is_over) return; // game has ended
 
@@ -164,7 +165,7 @@ void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponen
 
 	// check if it is the opponents turn
 	if (*opponent_turn) {
-		opponentMove();
+		opponentMove(previous_move);
 		*opponent_turn = false;
 		return;
 	}
@@ -181,6 +182,12 @@ void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponen
 	*mouse_position = GetMousePosition();
 	int column = mouse_position->x / SQUARE_SIZE;
 	int row = mouse_position->y / SQUARE_SIZE;
+
+	// cancel if not white piece selected
+	if ((chess_board[column][row].player != WHITE_PLAYER) && !(*piece_is_selected))
+	{
+		return;
+	}
 
 	// update mouse hovering
 	resetBoardIsHovering();
@@ -206,8 +213,15 @@ void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponen
 			else
 				PlaySound(capture_piece);
 			movePiece();
+
+			// log moves
+			previous_move->target_column = column;
+			previous_move->target_row = row;
+
+			// reset logs
 			*piece_is_selected = false;
 			resetBoardIsSelected();
+			resetBoardIsHovering();
 			resetLegalMoves();
 			*opponent_turn = true;
 		} else {
@@ -217,11 +231,16 @@ void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponen
 			resetBoardIsSelected();
 		}
 	} else {
+		// select piece and get possible moves
 		resetBoardIsSelected();
 		resetLegalMoves();
 		chess_board[column][row].isSelected = true;
 		*piece_is_selected = true;
 		setLegalMoves();
+
+		//log moves
+		previous_move->selected_column = column;
+		previous_move->selected_row = row;
 	}
 }
 
@@ -346,9 +365,11 @@ void movePiece()
 {
 	// initiating variables
 	struct pieces piece;
-	int piece_column, piece_row;
+	int piece_column; 
+	int piece_row;
 	struct pieces moveTo;
-	int moveTo_column, moveTo_row;
+	int moveTo_column; 
+	int moveTo_row;
 
 	// assign value to variables
 	for (int column = 0; column < BOARD_SIZE; column++) {
@@ -380,9 +401,10 @@ void movePiece()
 		castle(piece_column, piece_row, moveTo_column, moveTo_row, piece_player);
 	} else {
 		// move pieces
-		chess_board[piece_column][piece_row].isSelected = false;
 		chess_board[moveTo_column][moveTo_row] = chess_board[piece_column][piece_row];
-		chess_board[piece_column][piece_row] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER};
+		chess_board[moveTo_column][moveTo_row].isSelected = false;
+		chess_board[moveTo_column][moveTo_row].isMouseHovering = false;
+		chess_board[piece_column][piece_row] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER, .isSelected = false, .isMouseHovering = false};
 	}
 
 	saveMove();
@@ -420,11 +442,15 @@ void castle(int piece_column, int piece_row, int moveTo_column, int moveTo_row, 
 	}
 }
 
-void opponentMove()
+void opponentMove(struct temp_move* previous_move)
 {
+	previous_move->value = 0;
 	int player = BLACK_PLAYER;
-	int minmax_depth = 0;
-	bestMove(player, minmax_depth);
+	int minmax_depth = 4;
+	struct temp_move move = bestMove(player, minmax_depth, *previous_move);
+	chess_board[move.selected_column][move.selected_row].isSelected = true;
+	chess_board[move.target_column][move.target_row].isMouseHovering = true;
+	movePiece();
 }
 
 int checkWinner()
