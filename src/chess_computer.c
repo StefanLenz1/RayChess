@@ -112,10 +112,13 @@ struct temp_move bestMove(int player, int minmax_depth, struct temp_move previou
 		chess_board[possible_pieces[i].column][possible_pieces[i].row].isSelected = false;
 
 		for (int pos = 0; pos < amount_of_legal_moves; pos++) {
+			// flip player and select squares
 			chess_board[possible_pieces[i].column][possible_pieces[i].row].isSelected = true;
 			chess_board[possible_legal_moves[pos].column][possible_legal_moves[pos].row].isMouseHovering = true;
 			int next_player;
 			(player == WHITE_PLAYER) ? (next_player = BLACK_PLAYER) : (next_player = WHITE_PLAYER);
+
+			// move and evaluate move
 			movePiece();
 			struct temp_move previous_move = {.selected_column = possible_pieces[i].column,
 			  .selected_row = possible_pieces[i].row,
@@ -123,6 +126,8 @@ struct temp_move bestMove(int player, int minmax_depth, struct temp_move previou
 			  .target_row = possible_legal_moves[pos].row};
 			struct temp_move temp = bestMove(next_player, minmax_depth - 1, previous_move);
 			unMove();
+
+			// check if move was best
 			if (player == BLACK_PLAYER) {
 				if (temp.value > best_move.value) {
 					best_move = previous_move;
