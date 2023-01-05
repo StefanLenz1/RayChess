@@ -14,8 +14,9 @@ struct temp_move {
 
 void initializeChessBoard();
 Rectangle getSourceSprite(struct pieces pieces);
-void drawFrame();
+void drawFrame(bool* game_is_over);
 void drawBoard();
+void drawFinishScreen();
 void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponent_turn, bool* game_is_over, struct temp_move* previous_move);
 void getLegalMoves(struct pieces pieces, int column, int row);
 void drawLegalMoves();

@@ -42,7 +42,7 @@ int main(void)
 	// main game loop
 	while (!WindowShouldClose()) {
 		updateFrame(&mouse_position, &piece_is_selected, &opponent_turn, &game_is_over, &previous_move); // updates the game logic
-		drawFrame(); // draws the frame
+		drawFrame(&game_is_over); // draws the frame
 	}
 
 	// de-initialization
@@ -91,15 +91,28 @@ void initializeChessBoard()
 		chess_board[column][1] = (struct pieces){.piece = PAWN, .player = BLACK_PLAYER};
 }
 
-void drawFrame()
+void drawFrame(bool* game_is_over)
 {
 	BeginDrawing();
 
 	ClearBackground(RAYWHITE);
 	drawBoard();
 	drawLegalMoves();
+	if (game_is_over)
+		drawFinishScreen();
 
 	EndDrawing();
+}
+
+void drawFinishScreen()
+{
+	int winner = checkWinner();
+	if (winner == WHITE_PLAYER) {
+		DrawText("White has won!", 100, 170, 40, BLUE);
+	}
+	if (winner == BLACK_PLAYER) {
+		DrawText("Black has won!", 100, 170, 40, BLUE);
+	}
 }
 
 void drawBoard()
@@ -149,7 +162,8 @@ void drawLegalMoves()
 
 void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponent_turn, bool* game_is_over, struct temp_move* previous_move)
 {
-	if (*game_is_over) return; // game has ended
+	if (*game_is_over)
+		return; // game has ended
 
 	if (checkWinner()) // no winner is zero
 	{
@@ -157,8 +171,7 @@ void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponen
 		return;
 	}
 
-	if (IsKeyPressed(KEY_R))
-	{
+	if (IsKeyPressed(KEY_R)) {
 		unMove();
 		return;
 	}
@@ -184,8 +197,7 @@ void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponen
 	int row = mouse_position->y / SQUARE_SIZE;
 
 	// cancel if not white piece selected
-	if ((chess_board[column][row].player != WHITE_PLAYER) && !(*piece_is_selected))
-	{
+	if ((chess_board[column][row].player != WHITE_PLAYER) && !(*piece_is_selected)) {
 		return;
 	}
 
@@ -238,7 +250,7 @@ void updateFrame(Vector2* mouse_position, bool* piece_is_selected, bool* opponen
 		*piece_is_selected = true;
 		setLegalMoves();
 
-		//log moves
+		// log moves
 		previous_move->selected_column = column;
 		previous_move->selected_row = row;
 	}
@@ -365,10 +377,10 @@ void movePiece()
 {
 	// initiating variables
 	struct pieces piece;
-	int piece_column; 
+	int piece_column;
 	int piece_row;
 	struct pieces moveTo;
-	int moveTo_column; 
+	int moveTo_column;
 	int moveTo_row;
 
 	// assign value to variables
@@ -404,7 +416,8 @@ void movePiece()
 		chess_board[moveTo_column][moveTo_row] = chess_board[piece_column][piece_row];
 		chess_board[moveTo_column][moveTo_row].isSelected = false;
 		chess_board[moveTo_column][moveTo_row].isMouseHovering = false;
-		chess_board[piece_column][piece_row] = (struct pieces){.piece = EMPTY, .player = NO_PLAYER, .isSelected = false, .isMouseHovering = false};
+		chess_board[piece_column][piece_row]
+		  = (struct pieces){.piece = EMPTY, .player = NO_PLAYER, .isSelected = false, .isMouseHovering = false};
 	}
 
 	saveMove();
@@ -458,16 +471,12 @@ int checkWinner()
 	// if no piece of a player is a king then the player has lost
 	bool black_lost = true;
 	bool white_lost = true;
-	for (int column = 0; column < BOARD_SIZE; column++)
-	{
-		for (int row = 0; row < BOARD_SIZE; row++)
-		{
-			if(chess_board[column][row].player == WHITE_PLAYER && chess_board[column][row].piece == KING)
-			{
+	for (int column = 0; column < BOARD_SIZE; column++) {
+		for (int row = 0; row < BOARD_SIZE; row++) {
+			if (chess_board[column][row].player == WHITE_PLAYER && chess_board[column][row].piece == KING) {
 				white_lost = false;
 			}
-			if(chess_board[column][row].player == BLACK_PLAYER && chess_board[column][row].piece == KING)
-			{
+			if (chess_board[column][row].player == BLACK_PLAYER && chess_board[column][row].piece == KING) {
 				black_lost = false;
 			}
 		}
