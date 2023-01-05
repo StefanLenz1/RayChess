@@ -28,9 +28,8 @@ struct board {
 struct board *history_of_turns;
 int count_turn = 0;
 
-int evaluate_board(int player);
-int evalutate_player_worth(int player);
-int evalutate_player_worth(int player);
+int evaluateBoard(int player);
+int evaluatePlayerWorth(int player);
 int amountOfPlayerPieces(int player);
 void getPlayerPieces(int player, int amount_of_pieces, struct player_piece *possible_pieces);
 int amountOfLegalMoves();
@@ -53,7 +52,7 @@ extern bool cancastle_b_s_rook;
 struct temp_move bestMove(int player, int minmax_depth, struct temp_move previous_move)
 {
 	// return best moves at last depth
-	previous_move.value = evaluate_board(player);
+	previous_move.value = evaluateBoard(player);
 	if (minmax_depth == 0)
 		return previous_move;
 
@@ -157,17 +156,17 @@ void initaliazeMoveHistory()
 	memcpy(history_of_turns[0].t_chess_board, chess_board, sizeof(chess_board));
 }
 
-int evaluate_board(int player)
+int evaluateBoard(int player)
 {
-	int white_worth = evalutate_player_worth(WHITE_PLAYER);
-	int black_worth = evalutate_player_worth(BLACK_PLAYER);
+	int white_worth = evaluatePlayerWorth(WHITE_PLAYER);
+	int black_worth = evaluatePlayerWorth(BLACK_PLAYER);
 	if (player == WHITE_PLAYER)
 		return (white_worth - black_worth);
 	if (player == BLACK_PLAYER)
 		return (black_worth - white_worth);
 }
 
-int evalutate_player_worth(int player)
+int evaluatePlayerWorth(int player)
 {
 	int sum_piece_worth = 0;
 	for (int column = 0; column < BOARD_SIZE; column++) {
