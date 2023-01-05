@@ -1,4 +1,4 @@
-# Geometry Slash
+# RayChess
 
 A chess game in C99 using the raylib graphics library
 
