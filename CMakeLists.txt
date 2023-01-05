@@ -4,7 +4,7 @@ project(Billiard)
 set (CMAKE_C_STANDARD 99)
 
 # Set release mode
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 
 # Setting raylib parameters 
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
