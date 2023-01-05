@@ -59,11 +59,18 @@ struct temp_move bestMove(int player, int minmax_depth, struct temp_move previou
 
 	// get possible pieces to select to move
 	int amount_of_pieces = amountOfPlayerPieces(player);
-	struct player_piece *possible_pieces = malloc(sizeof(struct player_piece) * amount_of_pieces);
+	struct player_piece possible_pieces[amount_of_pieces];
 	getPlayerPieces(player, amount_of_pieces, possible_pieces);
 
+	// max for black min for white
+	struct temp_move best_move;
+	if (player == BLACK_PLAYER) {
+		best_move.value = -100;
+	} else {
+		best_move.value = 100;
+	}
+	
 	// iterate through legal move for the specific selected pieces
-	struct temp_move best_move = {.value = -100};
 	for (int i = 0; i < amount_of_pieces; i++) {
 		// get legal moves for pieces
 		chess_board[possible_pieces[i].column][possible_pieces[i].row].isSelected = true;
@@ -75,7 +82,7 @@ struct temp_move bestMove(int player, int minmax_depth, struct temp_move previou
 			chess_board[possible_pieces[i].column][possible_pieces[i].row].isSelected = false;
 			continue;
 		}
-		struct pos *possible_legal_moves = malloc(sizeof(struct pos) * amount_of_legal_moves);
+		struct pos possible_legal_moves[amount_of_legal_moves];
 		getPossibleMoves(possible_legal_moves);
 		chess_board[possible_pieces[i].column][possible_pieces[i].row].isSelected = false;
 
@@ -89,18 +96,22 @@ struct temp_move bestMove(int player, int minmax_depth, struct temp_move previou
 			  .selected_row = possible_pieces[i].row,
 			  .target_column = possible_legal_moves[pos].column,
 			  .target_row = possible_legal_moves[pos].row};
-			struct temp_move temp = bestMove(player, minmax_depth - 1, previous_move);
+			struct temp_move temp = bestMove(next_player, minmax_depth - 1, previous_move);
 			unMove();
-			if (temp.value > best_move.value)
-			{
-				best_move = previous_move;
-				best_move.value = temp.value;
+			if (player == BLACK_PLAYER) {
+				if (temp.value > best_move.value) {
+					best_move = previous_move;
+					best_move.value = temp.value;
+				}
+			} else {
+				if (temp.value < best_move.value) {
+					best_move = previous_move;
+					best_move.value = temp.value;
+				}
 			}
 		}
 		resetLegalMoves();
-		free(possible_legal_moves);
 	}
-	free(possible_pieces);
 	return (best_move);
 }
 
