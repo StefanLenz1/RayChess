@@ -419,8 +419,21 @@ void movePiece()
 		chess_board[piece_column][piece_row]
 		  = (struct pieces){.piece = EMPTY, .player = NO_PLAYER, .isSelected = false, .isMouseHovering = false};
 	}
+	// check promotion
+	if (piece_type == PAWN)
+		promotion();
 
 	saveMove();
+}
+
+void promotion()
+{
+	for (int column = 0; column < BOARD_SIZE; column++) {
+		if (chess_board[column][0].piece == PAWN)
+			chess_board[column][0].piece = QUEEN;
+		if (chess_board[column][7].piece == PAWN)
+			chess_board[column][7].piece = QUEEN;
+	}
 }
 
 void castle(int piece_column, int piece_row, int moveTo_column, int moveTo_row, int piece_player)

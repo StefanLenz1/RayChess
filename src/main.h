@@ -28,5 +28,6 @@ void resetLegalMoves();
 void castle(int piece_column, int piece_row, int moveTo_column, int moveTo_row, int piece_player);
 void opponentMove(struct temp_move* previous_move);
 int checkWinner();
+void promotion();
 
 #endif
